@@ -1,0 +1,31 @@
+spring:
+  application:
+    name: chatbot-agent-demo
+
+  ai:
+    bedrock:
+      aws:
+        access-key: <access-key>
+        region: us-east-1
+        secret-key: <secret-key>
+        timeout: 1m
+      converse:
+        chat:
+          enabled: true
+          options:
+            model: anthropic.claude-3-haiku-20240307-v1:0
+            temperature: 0
+#            top-p: 1
+#            top-k: 250
+#            max-tokens: 4096
+#    embedding:
+#      transformer:
+#        tokenizer:
+#          uri: https://huggingface.co/intfloat/e5-small-v2/raw/main/tokenizer.json
+#        onnx:
+#          modelUri: https://huggingface.co/intfloat/e5-small-v2/resolve/main/model.onnx
+
+logging:
+  level:
+    root: info
+    org.springframework.ai.chat.client.advisor: debug
