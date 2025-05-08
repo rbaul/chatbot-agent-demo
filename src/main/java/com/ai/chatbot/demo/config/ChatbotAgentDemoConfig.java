@@ -1,14 +1,20 @@
 package com.ai.chatbot.demo.config;
 
+import com.ai.chatbot.demo.AiTools;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.ai.document.Document;
 import org.springframework.ai.embedding.EmbeddingModel;
 import org.springframework.ai.reader.pdf.PagePdfDocumentReader;
+import org.springframework.ai.tool.StaticToolCallbackProvider;
+import org.springframework.ai.tool.ToolCallback;
+import org.springframework.ai.tool.ToolCallbackProvider;
+import org.springframework.ai.tool.ToolCallbacks;
 import org.springframework.ai.transformer.splitter.TextSplitter;
 import org.springframework.ai.transformer.splitter.TokenTextSplitter;
 import org.springframework.ai.vectorstore.SimpleVectorStore;
 import org.springframework.ai.vectorstore.VectorStore;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.boot.ApplicationRunner;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.io.FileSystemResource;
@@ -16,6 +22,7 @@ import org.springframework.core.io.Resource;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.Arrays;
 import java.util.List;
 
 @Slf4j
@@ -23,10 +30,38 @@ import java.util.List;
 public class ChatbotAgentDemoConfig {
 
     @Bean
+    public ToolCallbackProvider toolCallbackProvider(List<AiTools> aiTools) {
+        return new StaticToolCallbackProvider(ToolCallbacks.from(aiTools.toArray()));
+    }
+
+    @Bean("docStore")
     public VectorStore docStore(@Qualifier("embeddingModel") EmbeddingModel embeddingModel, TextSplitter textSplitter) throws IOException {
         SimpleVectorStore vectorStore = SimpleVectorStore.builder(embeddingModel).build();
         ingestGeneral(vectorStore, textSplitter, new FileSystemResource("vector-store/spring.json"), new FileSystemResource("data/spring_boot_reference_guide.pdf"));
         return vectorStore;
+    }
+
+    @Bean("toolsStore")
+    public VectorStore toolsStore(@Qualifier("embeddingModel") EmbeddingModel embeddingModel) {
+        return SimpleVectorStore.builder(embeddingModel).build();
+    }
+
+    @Bean
+    public ApplicationRunner ingestToolsToVectorStore(@Qualifier("toolsStore") VectorStore vectorStore, List<ToolCallbackProvider> tcbProviders) {
+        return args -> {
+            List<ToolCallback> toolCallbacks = tcbProviders.stream()
+                    .flatMap(toolCallbackProvider -> Arrays.stream(toolCallbackProvider.getToolCallbacks())).toList();
+            List<Document> documents = toolCallbacks.stream().map(toolCallback -> {
+                String key = String.format("%s: %s", toolCallback.getToolDefinition().name(), toolCallback.getToolDefinition().description());
+
+                Document document = new Document(key);
+                document.getMetadata().put("definition", toolCallback.getToolDefinition());
+                document.getMetadata().put("name", toolCallback.getToolDefinition().name());
+                return document;
+            }).toList();
+
+            vectorStore.write(documents);
+        };
     }
 
     @Bean

@@ -3,6 +3,17 @@ spring:
     name: chatbot-agent-demo
 
   ai:
+    mcp:
+      client:
+        enabled: true
+        #        name: hello
+        type: SYNC
+        toolcallback:
+          enabled: true
+        sse:
+          connections:
+            demo-mcp-server:
+              url: http://localhost:8060
     bedrock:
       aws:
         access-key: <access-key>
