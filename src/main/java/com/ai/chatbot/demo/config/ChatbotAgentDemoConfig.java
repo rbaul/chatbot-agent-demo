@@ -1,6 +1,7 @@
 package com.ai.chatbot.demo.config;
 
 import com.ai.chatbot.demo.AiTools;
+import com.ai.chatbot.demo.tools.ToolsRetriever;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.ai.document.Document;
 import org.springframework.ai.embedding.EmbeddingModel;
@@ -55,8 +56,8 @@ public class ChatbotAgentDemoConfig {
                 String key = String.format("%s: %s", toolCallback.getToolDefinition().name(), toolCallback.getToolDefinition().description());
 
                 Document document = new Document(key);
-                document.getMetadata().put("definition", toolCallback.getToolDefinition());
-                document.getMetadata().put("name", toolCallback.getToolDefinition().name());
+                document.getMetadata().put(ToolsRetriever.DEFINITION, toolCallback.getToolDefinition());
+                document.getMetadata().put(ToolsRetriever.NAME, toolCallback.getToolDefinition().name());
                 return document;
             }).toList();
 
